@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-03-19
+
+### Added
+- CLI test suite (tests/cli.test.js)
+- references/ directory with detailed documentation
+- references/tools.md - detailed tool parameters
+- references/examples.md - usage examples
+
+### Changed
+- SKILL.md 精简到 100 行以内
+- Added license field to SKILL.md frontmatter
+- Added references links to SKILL.md
+
+---
+
+## [1.3.5] - 2026-03-19
+
+### Fixed
+- CLI bug fixes for write, search, and experience management
+
+---
+
 ## [1.2.1] - 2026-03-19
 
 ### Added
