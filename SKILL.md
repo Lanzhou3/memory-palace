@@ -1,7 +1,8 @@
 ---
 name: memory-palace
 description: Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, experience accumulation, and LLM-enhanced features
-version: 1.3.2
+version: 1.3.4
+allowed-tools: Bash(npx memory-palace:*)
 ---
 
 # Memory Palace
