@@ -1,15 +1,7 @@
 ---
 name: memory-palace
 description: Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, experience accumulation, and LLM-enhanced features
-version: 1.2.1
-metadata:
-  openclaw:
-    requires:
-      bins: []
-    install:
-      - id: node
-        kind: node
-        package: "@openclaw/memory-palace"
+version: 1.3.2
 ---
 
 # Memory Palace
