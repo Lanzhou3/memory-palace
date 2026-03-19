@@ -16,6 +16,23 @@ metadata:
 
 为 AI Agent 提供持久化记忆管理，支持语义搜索、时间推理、经验积累。
 
+## ⚠️ 首次使用 - 向量模型安装
+
+语义搜索功能依赖 **BGE-small-zh-v1.5** 向量模型（约 100MB）。
+
+**安装脚本**:
+```bash
+cd /path/to/memory-palace
+bash scripts/install-vector-dependencies.sh
+```
+
+**AI 必须检查**:
+1. 首次使用搜索功能时，检查模型是否存在
+2. 如用户反馈搜索不到相关内容，优先检查向量模型是否安装
+3. 未安装时提示用户安装，或主动帮用户执行安装脚本
+
+**无向量时**: 自动降级到纯文本关键词匹配，命中率下降
+
 ## 工具列表
 
 ### 基础操作
@@ -209,29 +226,3 @@ memory_palace_summarize: { id: "memory-id" }
 2. **经验验证**: 经验需要多次验证才能标记为有效，避免错误经验传播
 3. **重要性**: 建议给重要记忆设置较高的 importance 值（0.7+）
 
----
-
-## 向量搜索依赖 ⚠️ 重要
-
-### 需要模型
-
-语义搜索功能依赖 **BGE-small-zh-v1.5** 向量模型（约 100MB）。
-
-### 安装方式
-
-运行项目根目录的安装脚本：
-```bash
-cd /data/agent-memory-palace
-bash scripts/install-vector-dependencies.sh
-```
-
-### AI 提示用户
-
-当用户询问为什么搜索不到相关内容时，AI 应该：
-1. 检查 Python 依赖是否安装 (`pip list | grep sentence-transformers`)
-2. 检查模型是否存在 (`ls ~/.cache/huggingface/hub/`)
-3. 如未安装，提示用户运行安装脚本，或主动帮用户安装
-
-### 无向量时的行为
-
-如未安装向量模型，搜索会自动降级到纯文本关键词匹配，命中率会下降。
