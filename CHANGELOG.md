@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.7] - 2026-03-19
+
+### Fixed
+- **update 命令返回 null** - 修复参数传递方式，从 `(id, data)` 改为 `{ id, ...data }` 对象
+- **经验记录的 content 字段未正确保存** - 修复 `record_experience` 参数传递方式
+- **verify_experience 测试失败** - 修复参数传递方式和测试代码中的字段读取路径
+- CLI 测试代码中 verifiedCount 读取路径从顶层改为 `experienceMeta.verifiedCount`
+
+---
+
 ## [1.3.6] - 2026-03-19
 
 ### Added

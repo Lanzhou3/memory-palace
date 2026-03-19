@@ -176,7 +176,7 @@ const tests = [
       const verifyResult = runCommand(`${CLI_COMMAND} verify_experience ${id} true`);
       if (!verifyResult.success) return false;
       const verifyData = JSON.parse(verifyResult.output);
-      return verifyData.verifiedCount >= 1;
+      return verifyData.experienceMeta && verifyData.experienceMeta.verifiedCount >= 1;
     }
   },
   // 帮助命令

@@ -70,7 +70,7 @@ async function main() {
         if (!id || !content) throw new Error('id and content are required');
         const tags = process.argv[5] ? JSON.parse(process.argv[5]) : undefined;
         const importance = process.argv[6] ? parseFloat(process.argv[6]) : undefined;
-        result = await manager.update(id, { content, tags, importance });
+        result = await manager.update({ id, content, tags, importance });
         break;
       }
       case 'delete': {
@@ -110,7 +110,7 @@ async function main() {
           throw new Error('content, applicability, and source are required');
         }
         const category = process.argv[6] || 'general';
-        result = await expManager.recordExperience(content, category, applicability, source);
+        result = await expManager.recordExperience({ content, category, applicability, source });
         break;
       }
       case 'get_experiences': {
@@ -123,7 +123,7 @@ async function main() {
         const id = process.argv[3];
         const effective = process.argv[4] === 'true';
         if (!id) throw new Error('id is required');
-        result = await expManager.verifyExperience(id, effective);
+        result = await expManager.verifyExperience({ id, effective });
         break;
       }
       default:
