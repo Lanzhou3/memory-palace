@@ -1,0 +1,105 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# IDE & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Environment & Secrets (CRITICAL - NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+.secrets/
+credentials/
+.credentials/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Data files (user-specific, databases)
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.json.bak
+
+# Python (for vector service scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env.py/
+*.egg-info/
+.eggs/
+dist-python/
+*.pyc
+
+# Optional npm cache
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# TypeScript incremental compilation
+*.tsbuildinfo
+
+# Package locks (keep package-lock.json, ignore others)
+# yarn.lock
+# pnpm-lock.yaml
+
+# Debug
+npm-debug.log*
+lib-cov
+.grunt
+.lock-wscript
+
+# SQLite database files (CRITICAL - may contain user data)
+*.db-shm
+*.db-wal
+
+# Jupyter notebooks
+.ipynb_checkpoints/
