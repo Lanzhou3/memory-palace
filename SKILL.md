@@ -12,6 +12,13 @@ Agent 的持久化记忆系统。让 AI Agent 能够**记住**用户偏好、对
 
 **首次使用：** 无需配置，向量模型未安装时自动降级到文本搜索。
 
+**推荐：安装向量模型以获得更好的搜索体验**
+```bash
+cd /path/to/memory-palace
+bash scripts/install-vector-dependencies.sh
+```
+向量模型（BGE-small-zh-v1.5）能让语义搜索更准确，比如搜"用户喜欢什么"能找到"我一般用深色模式"这类表述，而不只是关键词匹配。
+
 **立即可用：**
 ```json
 // 记住用户说的话
@@ -111,6 +118,8 @@ memory_palace_write: { "content": "决定使用 PostgreSQL 作为主数据库", 
 | 工具 | 功能 |
 |------|------|
 | `memory_palace_restore` | 从回收站恢复记忆 |
+| `memory_palace_link` | 将两条记忆关联起来 |
+| `memory_palace_get_related` | 获取某条记忆的所有关联记忆 |
 
 ---
 
@@ -155,6 +164,31 @@ memory_palace_write: { "content": "决定使用 PostgreSQL 作为主数据库", 
   - `product` - 产品
   - `communication` - 沟通
   - `general` - 一般
+
+### memory_palace_link
+
+将两条记忆关联起来。
+
+**必填：**
+- `sourceId`: 源记忆 ID
+- `targetId`: 目标记忆 ID
+- `type`: 关系类型
+  - `relates_to` - 相关
+  - `refines` - 细化
+  - `contradicts` - 矛盾
+
+**可选：**
+- `note`: 说明
+
+### memory_palace_get_related
+
+获取某条记忆的所有关联记忆。
+
+**必填：**
+- `id`: 记忆 ID
+
+**可选：**
+- `type`: 只返回特定类型的关系（`relates_to` / `refines` / `contradicts`）
 
 ---
 

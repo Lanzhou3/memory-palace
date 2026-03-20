@@ -106,6 +106,23 @@ async function main() {
     case 'restore':
       result = await manager.restore(args.id);
       break;
+      
+    // ========== 记忆关联 ==========
+    case 'link':
+      // 将两条记忆关联起来
+      // 参数: { sourceId, targetId, type, note? }
+      result = await manager.linkMemories(args.sourceId, {
+        type: args.type,
+        targetId: args.targetId,
+        note: args.note,
+      });
+      break;
+      
+    case 'get_related':
+      // 获取关联记忆
+      // 参数: { id, type? }
+      result = await manager.getRelatedMemories(args.id, args.type);
+      break;
 
     // ========== 经验管理 ==========
     case 'record_experience':
@@ -296,6 +313,7 @@ async function main() {
       console.error('  - record_experience, get_experiences, verify_experience, get_relevant_experiences, experience_stats');
       console.error('  - summarize, parse_time');
       console.error('  - extract_experience, expand_concepts, compress');
+      console.error('  - link, get_related');
       process.exit(1);
   }
   

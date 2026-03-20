@@ -173,6 +173,9 @@ export function deserializeMemory(content: string, id: string): Memory {
       verified: meta.verified as boolean,
       verifiedCount: meta.verifiedCount as number | undefined,
       lastVerifiedAt: meta.lastVerifiedAt ? new Date(meta.lastVerifiedAt as string) : undefined,
+      effectivenessScore: meta.effectivenessScore as number ?? 0,
+      usageCount: meta.usageCount as number ?? 0,
+      lastUsedAt: meta.lastUsedAt ? new Date(meta.lastUsedAt as string) : undefined,
     };
   }
   

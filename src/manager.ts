@@ -20,6 +20,8 @@ import type {
   Stats,
   VectorSearchProvider,
   GetParams,
+  RelationType,
+  MemoryRelation,
 } from './types.js';
 import { TimeReasoningEngine, createTimeReasoning, type TimeContext } from './background/time-reasoning.js';
 import { ConceptExpander, createConceptExpander, type ConceptExpansion } from './background/concept-expansion.js';
@@ -314,6 +316,10 @@ export class MemoryPalaceManager {
     
     if (params.summary !== undefined) {
       memory.summary = params.summary;
+    }
+    
+    if (params.relations !== undefined) {
+      memory.relations = params.relations.slice(0, 5); // Max 5 relations
     }
     
     memory.updatedAt = new Date();
@@ -809,6 +815,90 @@ export class MemoryPalaceManager {
    */
   async emptyTrash(): Promise<void> {
     await this.storage.emptyTrash();
+  }
+  
+  // ==================== Memory Linking ====================
+  
+  /**
+   * Link two memories together
+   * @param id Source memory ID
+   * @param relation Relation to add (type, targetId, note?)
+   * @returns Updated source memory or null if not found
+   */
+  async linkMemories(id: string, relation: MemoryRelation): Promise<Memory | null> {
+    const memory = await this.storage.load(id);
+    if (!memory) {
+      return null;
+    }
+    
+    // Initialize relations array if not present
+    if (!memory.relations) {
+      memory.relations = [];
+    }
+    
+    // Check if relation already exists
+    const existingIndex = memory.relations.findIndex(
+      r => r.targetId === relation.targetId && r.type === relation.type
+    );
+    
+    if (existingIndex >= 0) {
+      // Update existing relation note if provided
+      if (relation.note) {
+        memory.relations[existingIndex].note = relation.note;
+      }
+    } else {
+      // Add new relation (max 5)
+      if (memory.relations.length >= 5) {
+        // Remove oldest relation
+        memory.relations.shift();
+      }
+      memory.relations.push({
+        type: relation.type,
+        targetId: relation.targetId,
+        note: relation.note,
+      });
+    }
+    
+    memory.updatedAt = new Date();
+    await this.storage.save(memory);
+    
+    return memory;
+  }
+  
+  /**
+   * Get all memories related to a given memory
+   * @param id Memory ID
+   * @param type Optional: filter by relation type
+   * @returns Array of related memories with their relation info
+   */
+  async getRelatedMemories(
+    id: string, 
+    type?: RelationType
+  ): Promise<Array<{ memory: Memory; relation: MemoryRelation }>> {
+    const memory = await this.storage.load(id);
+    if (!memory || !memory.relations) {
+      return [];
+    }
+    
+    // Filter by type if specified
+    const relations = type 
+      ? memory.relations.filter(r => r.type === type)
+      : memory.relations;
+    
+    // Fetch all related memories
+    const related: Array<{ memory: Memory; relation: MemoryRelation }> = [];
+    
+    for (const relation of relations) {
+      const relatedMemory = await this.storage.load(relation.targetId);
+      if (relatedMemory) {
+        related.push({
+          memory: relatedMemory,
+          relation,
+        });
+      }
+    }
+    
+    return related;
   }
   
   // ==================== Bulk Operations ====================

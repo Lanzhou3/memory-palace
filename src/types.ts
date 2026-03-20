@@ -40,6 +40,29 @@ export interface ExperienceMeta {
   verifiedCount?: number;
   /** When last verified */
   lastVerifiedAt?: Date;
+  /** Effectiveness score (0-1), computed: Math.min(1, verifiedCount * 0.3 + usageCount * 0.1) */
+  effectivenessScore: number;
+  /** Number of times this experience was queried/used */
+  usageCount: number;
+  /** When last used/queried */
+  lastUsedAt?: Date;
+}
+
+/**
+ * Memory relation type
+ */
+export type RelationType = 'relates_to' | 'refines' | 'contradicts';
+
+/**
+ * A relation between two memories
+ */
+export interface MemoryRelation {
+  /** Relation type */
+  type: RelationType;
+  /** Target memory ID */
+  targetId: string;
+  /** Optional note about this relation */
+  note?: string;
 }
 
 /**
@@ -96,6 +119,9 @@ export interface Memory {
   
   /** Experience metadata (only for type='experience' memories) */
   experienceMeta?: ExperienceMeta;
+  
+  /** Relations to other memories (max 5) */
+  relations?: MemoryRelation[];
   
   /** Ebbinghaus forgetting curve metrics */
   decay?: MemoryDecayMetrics;
@@ -166,6 +192,9 @@ export interface UpdateParams {
   
   /** Append to existing tags instead of replacing */
   appendTags?: boolean;
+  
+  /** Relations to other memories */
+  relations?: MemoryRelation[];
 }
 
 /**

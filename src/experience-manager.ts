@@ -66,6 +66,8 @@ export class ExperienceManager {
         source: options.source,
         verified: false,
         verifiedCount: 0,
+        effectivenessScore: 0.1, // Initialize to minimum score
+        usageCount: 0,
       },
     });
 
@@ -114,18 +116,32 @@ export class ExperienceManager {
       );
     }
 
-    // Sort by verification count if requested
+    // Sort by effectivenessScore (default), or by verification count if requested
     if (sortByVerified) {
       experiences.sort((a, b) => 
         (b.experienceMeta?.verifiedCount || 0) - (a.experienceMeta?.verifiedCount || 0)
       );
     } else {
-      // Default: sort by importance then date
-      experiences.sort((a, b) => {
-        const impDiff = b.importance - a.importance;
-        if (impDiff !== 0) return impDiff;
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
-      });
+      // Default: sort by effectivenessScore descending
+      experiences.sort((a, b) => 
+        (b.experienceMeta?.effectivenessScore || 0) - (a.experienceMeta?.effectivenessScore || 0)
+      );
+    }
+    
+    // Increment usageCount and update lastUsedAt for queried experiences
+    const now = new Date();
+    for (const exp of experiences) {
+      if (exp.experienceMeta) {
+        exp.experienceMeta.usageCount = (exp.experienceMeta.usageCount || 0) + 1;
+        exp.experienceMeta.lastUsedAt = now;
+        // Update effectivenessScore
+        exp.experienceMeta.effectivenessScore = Math.min(1, 
+          (exp.experienceMeta.verifiedCount || 0) * 0.3 + 
+          exp.experienceMeta.usageCount * 0.1
+        );
+        // Save the update asynchronously
+        this.storage.save(exp).catch(() => {});
+      }
     }
 
     return experiences.slice(0, limit);
@@ -157,6 +173,12 @@ export class ExperienceManager {
       ? Math.min(1, memory.importance + 0.05) // Boost importance if effective
       : Math.max(0.3, memory.importance - 0.1); // Reduce if not effective
 
+    // Calculate new effectivenessScore: Math.min(1, verifiedCount * 0.3 + usageCount * 0.1)
+    const newEffectivenessScore = Math.min(1, 
+      newVerifiedCount * 0.3 + 
+      (memory.experienceMeta?.usageCount || 0) * 0.1
+    );
+
     // Update the memory
     const updatedMemory: Memory = {
       ...memory,
@@ -167,6 +189,7 @@ export class ExperienceManager {
         verified: newVerified,
         verifiedCount: newVerifiedCount,
         lastVerifiedAt: new Date(),
+        effectivenessScore: newEffectivenessScore,
       },
     };
 
@@ -280,6 +303,22 @@ export class ExperienceManager {
     const experiences = results
       .filter(r => r.memory.type === 'experience')
       .map(r => r.memory);
+
+    // Update usage metrics for these experiences
+    const now = new Date();
+    for (const exp of experiences) {
+      if (exp.experienceMeta) {
+        exp.experienceMeta.usageCount = (exp.experienceMeta.usageCount || 0) + 1;
+        exp.experienceMeta.lastUsedAt = now;
+        // Update effectivenessScore
+        exp.experienceMeta.effectivenessScore = Math.min(1, 
+          (exp.experienceMeta.verifiedCount || 0) * 0.3 + 
+          exp.experienceMeta.usageCount * 0.1
+        );
+        // Save the update asynchronously
+        this.storage.save(exp).catch(() => {});
+      }
+    }
 
     // Boost verified experiences
     experiences.sort((a, b) => {
