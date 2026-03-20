@@ -55,6 +55,9 @@ bash scripts/install-vector-dependencies.sh
 |------|------|----------|------|
 | `memory_palace_summarize` | 智能总结 | id | 60s |
 | `memory_palace_parse_time` | 时间表达式解析 | expression | 10s |
+| `memory_palace_extract_experience` | 从记忆提取经验 | - | 60s |
+| `memory_palace_expand_concepts` | LLM扩展搜索概念 | query | 15s |
+| `memory_palace_compress` | 智能压缩记忆 | memory_ids | 60s |
 
 ### 经验统计
 
@@ -165,6 +168,78 @@ LLM 智能总结记忆。
 - `save_summary` (可选): 是否保存到记忆，默认 true
 
 **返回**: `{ summary, keyPoints, importance, suggestedTags, category }`
+
+---
+
+### memory_palace_extract_experience
+
+从记忆内容中提取可复用的经验和教训。
+
+**参数**:
+- `memory_ids` (可选): 记忆ID数组，默认处理所有记忆
+- `category` (可选): 筛选特定类别的记忆
+
+**返回**:
+```json
+{
+  "experiences": [
+    {
+      "content": "经验内容",
+      "category": "development",
+      "applicability": "适用场景",
+      "lessons": ["教训1", "教训2"],
+      "bestPractices": ["最佳实践1"],
+      "sourceMemoryId": "记忆ID"
+    }
+  ],
+  "count": 3
+}
+```
+
+---
+
+### memory_palace_expand_concepts
+
+使用 LLM 动态扩展搜索概念，提升搜索的语义理解能力。
+
+**参数**:
+- `query` (必填): 搜索词
+- `mode` (可选): "search" / "general"，默认 "search"
+
+**返回**:
+```json
+{
+  "originalQuery": "用户偏好",
+  "expandedKeywords": ["用户偏好", "设置", "配置", "选项"],
+  "relatedConcepts": ["UI设置", "主题配置", "个性化"],
+  "domains": ["preferences", "settings"]
+}
+```
+
+---
+
+### memory_palace_compress
+
+智能压缩多条记忆，保留关键信息。
+
+**参数**:
+- `memory_ids` (必填): 记忆ID数组（至少2条）
+
+**返回**:
+```json
+{
+  "compressedMemories": [
+    {
+      "id": "记忆ID",
+      "compressedContent": "压缩后的内容摘要",
+      "preservedKeyInfo": ["关键信息1", "关键信息2"],
+      "compressionRatio": 0.45
+    }
+  ],
+  "totalOriginalChars": 5000,
+  "totalCompressedChars": 2250
+}
+```
 
 ---
 
