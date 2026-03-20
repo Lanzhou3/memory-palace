@@ -2,17 +2,41 @@
 import { MemoryPalaceManager } from '../dist/src/manager.js';
 import { createTimeReasoning } from '../dist/src/background/time-reasoning.js';
 import { defaultSummarizer } from '../dist/src/llm/summarizer.js';
+import { createLocalVectorSearch, type LocalVectorSearchConfig } from '../dist/src/background/vector-search.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Parse CLI arguments
+const cliArgs = process.argv.slice(2);
+let dbPath = null;
+
+// Look for --db-path in arguments
+for (let i = 0; i < cliArgs.length; i++) {
+  if (cliArgs[i] === '--db-path' && i + 1 < cliArgs.length) {
+    dbPath = cliArgs[i + 1];
+    break;
+  }
+}
+
 // Workspace path from env or default
 const workspacePath = process.env.OPENCLAW_WORKSPACE || process.env.HOME + '/.openclaw/workspace';
 const memoryPath = join(workspacePath, 'memory', 'palace');
 
-const manager = new MemoryPalaceManager({ workspaceDir: memoryPath });
+// Create vector search provider with dbPath if provided
+let vectorSearch = null;
+if (dbPath) {
+  const vectorConfig = { dbPath } satisfies LocalVectorSearchConfig;
+  vectorSearch = createLocalVectorSearch(vectorConfig);
+  console.error('[memory-palace] Using custom db-path:', dbPath);
+}
+
+const manager = new MemoryPalaceManager({ 
+  workspaceDir: memoryPath,
+  vectorSearch 
+});
 const timeReasoning = createTimeReasoning();
 const summarizer = defaultSummarizer;
 

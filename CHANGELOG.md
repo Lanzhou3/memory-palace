@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - API 类型定义与实际实现对齐
+- **CLI --db-path 参数**: 添加全局 `--db-path` 参数支持，将路径传递给 LocalVectorSearchProvider
+- **向量服务权限检查**: 添加 `check_db_path_writable()` 函数，初始化时检查数据库路径可写性
+- **SKILL.md 版本号**: 更新为 v1.4.0-beta.1
 
 ---
 
