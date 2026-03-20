@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-03-20
+
+### Changed
+- SKILL.md 移除冗余 version 字段
+
+### Fixed
+- 修复版本号与发布状态同步
+
+---
+
+## [1.4.0] - 2026-03-20
+
+### Changed
+- **LLM 工具降级为规则引擎**: `parse_time` 从 LLM 调用降级为规则引擎实现，提升响应速度并避免 API 依赖
+- **精简 LLM 依赖**: 移除以下 LLM 工具（功能已整合或降级为规则引擎）：
+  - `extract_experience` - 经验提取
+  - `parse_time_llm` - LLM 时间解析
+  - `expand_concepts_llm` - 概念扩展
+  - `compress` - 记忆压缩
+- 保留 `summarize` LLM 智能总结功能
+
+### Technical Details
+- `summarize` 仍使用 LLM 增强，提供智能总结服务
+- `parse_time` 改用规则引擎，解析常见时间表达式（明天、下周三、上周五等）
+- 向量搜索功能保持不变
+
+---
+
 ## [1.4.0-beta.1] - 2026-03-20
 
 ### Added

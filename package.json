@@ -1,7 +1,7 @@
 {
   "name": "memory-palace",
-  "version": "1.4.0",
-  "description": "Memory Palace - Cognitive enhancement layer for OpenClaw agents with LLM-enhanced features",
+  "version": "1.4.1",
+  "description": "Memory Palace - Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, and experience accumulation",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
