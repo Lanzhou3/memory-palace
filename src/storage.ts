@@ -118,6 +118,15 @@ function generateFrontmatter(memory: Memory): string {
     lines.push(`experienceMeta: ${JSON.stringify(memory.experienceMeta)}`);
   }
   
+  // Ebbinghaus decay metrics
+  if (memory.decay) {
+    lines.push(`decay: ${JSON.stringify({
+      decayScore: memory.decay.decayScore,
+      accessCount: memory.decay.accessCount,
+      lastAccessedAt: memory.decay.lastAccessedAt?.toISOString(),
+    })}`);
+  }
+  
   lines.push('---');
   
   return lines.join('\n');
@@ -167,6 +176,19 @@ export function deserializeMemory(content: string, id: string): Memory {
     };
   }
   
+  // Parse decay metrics if present (Ebbinghaus forgetting curve)
+  let decay: Memory['decay'] = undefined;
+  if (frontmatter.decay && typeof frontmatter.decay === 'object') {
+    const decayData = frontmatter.decay as Record<string, unknown>;
+    decay = {
+      decayScore: decayData.decayScore as number ?? 1.0,
+      accessCount: decayData.accessCount as number ?? 0,
+      lastAccessedAt: decayData.lastAccessedAt 
+        ? new Date(decayData.lastAccessedAt as string) 
+        : undefined,
+    };
+  }
+  
   return {
     id: frontmatter.id as string || id,
     content: mainContent.trim(),
@@ -181,6 +203,7 @@ export function deserializeMemory(content: string, id: string): Memory {
     deletedAt: frontmatter.deletedAt ? new Date(frontmatter.deletedAt as string) : undefined,
     type: frontmatter.type as MemoryType | undefined,
     experienceMeta,
+    decay,
   };
 }
 

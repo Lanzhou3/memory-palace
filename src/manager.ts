@@ -47,6 +47,18 @@ export interface MemoryPalaceManagerOptions {
   
   /** Optional vector search provider */
   vectorSearch?: VectorSearchProvider;
+  
+  /** Enable Ebbinghaus forgetting curve decay mechanism */
+  decayEnabled?: boolean;
+  
+  /** Archive threshold for decay score (default: 0.1) */
+  decayArchiveThreshold?: number;
+  
+  /** Decay recovery factor on access (default: 0.2) */
+  decayRecoveryFactor?: number;
+  
+  /** Base decay multiplier (default: 0.9) */
+  decayBaseMultiplier?: number;
 }
 
 /**
@@ -64,6 +76,12 @@ export class MemoryPalaceManager {
   private conceptExpander: ConceptExpander;
   private experienceManager: ExperienceManager;
   
+  // Ebbinghaus decay settings
+  private decayEnabled: boolean;
+  private decayArchiveThreshold: number;
+  private decayRecoveryFactor: number;
+  private decayBaseMultiplier: number;
+  
   constructor(options: MemoryPalaceManagerOptions) {
     this.workspaceDir = options.workspaceDir;
     this.storagePath = path.join(options.workspaceDir, 'memory/palace');
@@ -72,6 +90,16 @@ export class MemoryPalaceManager {
     this.timeReasoning = createTimeReasoning();
     this.conceptExpander = createConceptExpander(options.vectorSearch);
     this.experienceManager = createExperienceManager(this);
+    
+    // Initialize decay settings from options or environment
+    this.decayEnabled = options.decayEnabled ?? 
+      process.env.MEMORY_DECAY_ENABLED !== 'false';
+    this.decayArchiveThreshold = options.decayArchiveThreshold ?? 
+      parseFloat(process.env.MEMORY_DECAY_ARCHIVE_THRESHOLD || '0.1');
+    this.decayRecoveryFactor = options.decayRecoveryFactor ?? 
+      parseFloat(process.env.MEMORY_DECAY_RECOVERY_FACTOR || '0.2');
+    this.decayBaseMultiplier = options.decayBaseMultiplier ?? 
+      parseFloat(process.env.MEMORY_DECAY_BASE_MULTIPLIER || '0.9');
   }
   
   /** Get storage path (needed by ExperienceManager) */
@@ -129,7 +157,129 @@ export class MemoryPalaceManager {
   async get(params: string | GetParams): Promise<Memory | null> {
     // Handle backward compatibility - accept string or object
     const id = typeof params === 'string' ? params : params.id;
-    return this.storage.load(id);
+    const memory = await this.storage.load(id);
+    
+    if (memory && this.decayEnabled) {
+      await this.updateDecay(memory);
+    }
+    
+    return memory;
+  }
+  
+  /**
+   * Update decay metrics after memory access
+   * Implements: decayScore = min(1, decayScore * baseMultiplier + recoveryFactor)
+   */
+  private async updateDecay(memory: Memory): Promise<void> {
+    const now = new Date();
+    
+    // Initialize decay if not present
+    if (!memory.decay) {
+      memory.decay = {
+        decayScore: 1.0,
+        accessCount: 0,
+        lastAccessedAt: undefined,
+      };
+    }
+    
+    // Update decay metrics
+    memory.decay.accessCount++;
+    memory.decay.lastAccessedAt = now;
+    
+    // Apply recovery formula: decayScore = min(1, decayScore * baseMultiplier + recoveryFactor)
+    memory.decay.decayScore = Math.min(
+      1,
+      memory.decay.decayScore * this.decayBaseMultiplier + this.decayRecoveryFactor
+    );
+    
+    // Check if should be auto-archived
+    if (memory.decay.decayScore < this.decayArchiveThreshold && memory.status === 'active') {
+      console.log(`[MemoryPalace] Memory ${memory.id} auto-archived (decayScore: ${memory.decay.decayScore.toFixed(3)})`);
+      memory.status = 'archived';
+    }
+    
+    memory.updatedAt = now;
+    await this.storage.save(memory);
+  }
+  
+  /**
+   * Get decay statistics for all memories
+   */
+  async getDecayStats(): Promise<{
+    enabled: boolean;
+    avgDecayScore: number;
+    archivedCount: number;
+    forgottenCount: number;
+    neverAccessedCount: number;
+  }> {
+    const ids = await this.storage.listFiles();
+    let totalDecayScore = 0;
+    let hasDecay = 0;
+    let archivedCount = 0;
+    let forgottenCount = 0;
+    let neverAccessedCount = 0;
+    
+    for (const id of ids) {
+      const memory = await this.storage.load(id);
+      if (!memory) continue;
+      
+      if (memory.decay) {
+        totalDecayScore += memory.decay.decayScore;
+        hasDecay++;
+        if (memory.status === 'archived') archivedCount++;
+        if (memory.decay.decayScore < this.decayArchiveThreshold) forgottenCount++;
+        if (memory.decay.accessCount === 0) neverAccessedCount++;
+      } else {
+        neverAccessedCount++;
+      }
+    }
+    
+    return {
+      enabled: this.decayEnabled,
+      avgDecayScore: hasDecay > 0 ? totalDecayScore / hasDecay : 1,
+      archivedCount,
+      forgottenCount,
+      neverAccessedCount,
+    };
+  }
+  
+  /**
+   * Restore an archived memory (resets decay score)
+   */
+  async restoreMemory(id: string): Promise<Memory | null> {
+    const memory = await this.storage.load(id);
+    if (!memory) return null;
+    
+    if (this.decayEnabled) {
+      // Reset decay score on restore
+      if (memory.decay) {
+        memory.decay.decayScore = 1.0;
+      }
+    }
+    
+    return this.update({ id, status: 'active' });
+  }
+  
+  /**
+   * Get memories sorted by decay score (most forgotten first)
+   */
+  async getForgottenMemories(limit: number = 20): Promise<Memory[]> {
+    const ids = await this.storage.listFiles();
+    const memories: Memory[] = [];
+    
+    for (const id of ids) {
+      const memory = await this.storage.load(id);
+      if (memory && memory.decay) {
+        memories.push(memory);
+      }
+    }
+    
+    // Sort by decay score (ascending - most forgotten first)
+    memories.sort((a, b) => 
+      (a.decay?.decayScore ?? 1) - (b.decay?.decayScore ?? 1)
+    );
+    
+    return memories.slice(0, limit);
   }
   
   /**
@@ -250,6 +400,8 @@ export class MemoryPalaceManager {
     
     // Step 4: Use vector search if available
     let isFallback = false;
+    let searchResults: SearchResult[] = [];
+    
     if (this.vectorSearch) {
       const filter: Record<string, unknown> = {};
       if (opts.location) {
@@ -262,7 +414,6 @@ export class MemoryPalaceManager {
       // Search with original query for semantic matching
       const results = await this.vectorSearch.search(query, topK * 2, filter);
       
-      const searchResults: SearchResult[] = [];
       for (const result of results) {
         const memory = await this.storage.load(result.id);
         if (memory && memory.status === 'active') {
@@ -283,12 +434,22 @@ export class MemoryPalaceManager {
       
       // Sort by boosted score and return top K
       searchResults.sort((a, b) => b.score - a.score);
-      return searchResults.slice(0, topK);
+      searchResults = searchResults.slice(0, topK);
+    } else {
+      // Fallback to text search with enhanced keywords
+      console.warn('[MemoryPalace] Vector search unavailable, falling back to text search. Consider installing vector dependencies for better search quality.');
+      searchResults = await this.textSearch(query, { ...opts, enhancedKeywords, isFallback: true });
     }
     
-    // Fallback to text search with enhanced keywords
-    console.warn('[MemoryPalace] Vector search unavailable, falling back to text search. Consider installing vector dependencies for better search quality.');
-    return this.textSearch(query, { ...opts, enhancedKeywords, isFallback: true });
+    // Update decay metrics for accessed memories (async, non-blocking)
+    if (this.decayEnabled && searchResults.length > 0) {
+      // Update decay asynchronously to not block search response
+      Promise.all(searchResults.map(sr => this.updateDecay(sr.memory))).catch(() => {
+        // Silently ignore decay update errors
+      });
+    }
+    
+    return searchResults;
   }
   
   /**

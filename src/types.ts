@@ -43,6 +43,18 @@ export interface ExperienceMeta {
 }
 
 /**
+ * Memory decay metrics for Ebbinghaus forgetting curve simulation
+ */
+export interface MemoryDecayMetrics {
+  /** Decay score (0-1), 1=fresh, 0=forgotten */
+  decayScore: number;
+  /** Number of times this memory has been accessed */
+  accessCount: number;
+  /** Last access timestamp */
+  lastAccessedAt?: Date;
+}
+
+/**
  * Memory record stored in palace
  */
 export interface Memory {
@@ -84,6 +96,9 @@ export interface Memory {
   
   /** Experience metadata (only for type='experience' memories) */
   experienceMeta?: ExperienceMeta;
+  
+  /** Ebbinghaus forgetting curve metrics */
+  decay?: MemoryDecayMetrics;
 }
 
 /**

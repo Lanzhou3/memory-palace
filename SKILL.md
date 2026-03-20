@@ -1,288 +1,265 @@
 ---
 name: "memory-palace"
-description: "Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, and experience accumulation"
+description: "为 AI Agent 提供持久化记忆管理，支持语义搜索、时间推理、经验积累和智能遗忘。"
 allowed-tools: Bash(npx memory-palace:*)
 ---
 
 # Memory Palace
 
-为 AI Agent 提供持久化记忆管理，支持语义搜索、时间推理、经验积累。
+Agent 的持久化记忆系统。让 AI Agent 能够**记住**用户偏好、对话上下文、项目状态、经验教训，并在需要时**主动检索**。
 
-## ⚠️ 首次使用 - 向量模型安装
+## 🚀 快速开始
 
-语义搜索功能依赖 **BGE-small-zh-v1.5** 向量模型（约 100MB）。
+**首次使用：** 无需配置，向量模型未安装时自动降级到文本搜索。
 
-**安装脚本**:
-```bash
-cd /path/to/memory-palace
-bash scripts/install-vector-dependencies.sh
+**立即可用：**
+```json
+// 记住用户说的话
+memory_palace_write: { "content": "用户叫盘古，喜欢简洁的回复", "tags": ["用户", "偏好"], "importance": 0.9 }
+
+// 下次想知道用户叫什么
+memory_palace_search: { "query": "用户名字" }
+
+// 记住项目的关键决策
+memory_palace_write: { "content": "决定使用 PostgreSQL 作为主数据库", "tags": ["项目决策", "数据库"], "importance": 0.8 }
 ```
 
-**AI 必须检查**:
-1. 首次使用搜索功能时，检查模型是否存在
-2. 如用户反馈搜索不到相关内容，优先检查向量模型是否安装
-3. 未安装时提示用户安装，或主动帮用户执行安装脚本
+---
 
-**无向量时**: 自动降级到纯文本关键词匹配，命中率下降
+## 📋 工具选择指南
+
+### 场景 1：用户告诉了我一些信息 → 写入记忆
+
+```
+用户说：「我叫张三」
+→ memory_palace_write: { "content": "用户名叫张三", "tags": ["用户信息"], "importance": 0.7 }
+```
+
+### 场景 2：需要回忆某件事 → 搜索记忆
+
+```
+用户问：「我上次说叫什么名字？」
+→ memory_palace_search: { "query": "用户名字" }
+```
+
+### 场景 3：完成了一个任务，学到了经验 → 记录经验
+
+```
+用户完成了一个 API 设计任务
+→ memory_palace_record_experience: { "content": "REST API 设计时用名词而非动词命名端点", "category": "development", "applicability": "设计新的 API 端点时", "source": "task-xxx" }
+```
+
+### 场景 4：需要判断某个经验是否有用 → 验证经验
+
+```
+之前记录过一条经验，现在在类似场景下
+→ memory_palace_verify_experience: { "id": "经验ID", "effective": true }  // 或 false
+```
+
+### 场景 5：长记忆需要提炼 → 智能总结
+
+```
+用户分享了一段很长的需求描述
+→ memory_palace_summarize: { "id": "记忆ID" }
+```
+
+### 场景 6：记忆太多太杂，需要整理 → 压缩或提取经验
+
+```
+项目进行了很久，积累了很多对话记录
+→ memory_palace_extract_experience: { "category": "development" }  // 提取开发经验
+→ memory_palace_compress: { "memory_ids": ["id1", "id2", ...] }  // 压缩多条记忆
+```
+
+---
 
 ## 工具列表
 
-### 基础操作
+### 基础操作（最常用）
 
-| 工具 | 功能 | 必填参数 |
-|------|------|----------|
-| `memory_palace_write` | 写入记忆 | content |
-| `memory_palace_get` | 获取记忆 | id |
-| `memory_palace_update` | 更新记忆 | id |
-| `memory_palace_delete` | 删除记忆 | id |
-| `memory_palace_search` | 搜索记忆 | query |
-| `memory_palace_list` | 列出记忆 | - |
-| `memory_palace_stats` | 统计信息 | - |
-| `memory_palace_restore` | 恢复记忆 | id |
+| 工具 | 功能 | 何时用 |
+|------|------|--------|
+| `memory_palace_write` | 写入记忆 | 用户告诉你任何重要信息时 |
+| `memory_palace_get` | 获取记忆 | 知道 ID，要查看完整内容 |
+| `memory_palace_update` | 更新记忆 | 发现记忆有误或需要补充 |
+| `memory_palace_delete` | 删除记忆 | 记忆过时或错误时 |
+| `memory_palace_search` | 搜索记忆 | 需要找某件事但不确定 ID |
+| `memory_palace_list` | 列出记忆 | 想看看记忆库里都有什么 |
 
-### 经验管理
+### 经验管理（进阶）
 
-| 工具 | 功能 | 必填参数 |
-|------|------|----------|
-| `memory_palace_record_experience` | 记录经验 | content, applicability, source |
-| `memory_palace_get_experiences` | 获取经验 | - |
-| `memory_palace_verify_experience` | 验证经验 | id, effective |
-| `memory_palace_get_relevant_experiences` | 相关经验 | context |
+| 工具 | 功能 | 何时用 |
+|------|------|--------|
+| `memory_palace_record_experience` | 记录可复用经验 | 完成重要任务、学到教训时 |
+| `memory_palace_get_experiences` | 查询经验 | 想参考过去的经验 |
+| `memory_palace_verify_experience` | 验证经验有效性 | 在类似场景验证经验是否正确 |
+| `memory_palace_get_relevant_experiences` | 查找相关经验 | 当前任务需要过去的经验指导 |
+| `memory_palace_experience_stats` | 经验统计 | 查看经验库健康度 |
 
-### LLM 增强
+### LLM 增强（智能处理）
 
-| 工具 | 功能 | 必填参数 | 超时 |
-|------|------|----------|------|
-| `memory_palace_summarize` | 智能总结 | id | 60s |
-| `memory_palace_parse_time` | 时间表达式解析 | expression | 10s |
-| `memory_palace_extract_experience` | 从记忆提取经验 | - | 60s |
-| `memory_palace_expand_concepts` | LLM扩展搜索概念 | query | 15s |
-| `memory_palace_compress` | 智能压缩记忆 | memory_ids | 60s |
+| 工具 | 功能 | 何时用 | 超时 |
+|------|------|--------|------|
+| `memory_palace_summarize` | 智能总结长记忆 | 记忆内容太长时提炼要点 | 60s |
+| `memory_palace_parse_time` | 解析时间表达 | 用户提到"明天"、"下周三"等 | 10s |
+| `memory_palace_extract_experience` | 从记忆提取经验 | 从对话中自动抽取可复用经验 | 60s |
+| `memory_palace_expand_concepts` | 语义扩展搜索 | 普通搜索找不到时扩展概念 | 15s |
+| `memory_palace_compress` | 智能压缩记忆 | 记忆太多需要精简 | 60s |
 
-### 经验统计
+### 回收站
 
-| 工具 | 功能 | 必填参数 |
-|------|------|----------|
-| `memory_palace_experience_stats` | 经验统计 | - |
+| 工具 | 功能 |
+|------|------|
+| `memory_palace_restore` | 从回收站恢复记忆 |
 
 ---
 
-## 工具详情
+## 参数详解
 
 ### memory_palace_write
 
-写入一条新记忆。
+**必填：**
+- `content`: 记忆内容（你想记住什么）
 
-**参数**:
-- `content` (必填): 记忆内容
-- `location` (可选): 存储位置，默认 "default"
-- `tags` (可选): 标签数组
-- `importance` (可选): 重要性 0-1，默认 0.5
-- `type` (可选): 类型 fact/experience/lesson/preference/decision
-
-**示例**:
-```json
-{
-  "content": "用户偏好深色模式",
-  "location": "preferences",
-  "tags": ["ui", "偏好"],
-  "importance": 0.8
-}
-```
-
----
+**可选：**
+- `tags`: 标签数组，方便分类检索，如 `["用户", "偏好", "重要"]`
+- `importance`: 重要性 0-1，建议 0.7+ 表示重要记忆
+- `location`: 存储位置，默认 "default"，如 "用户"、"项目A"、"日程"
+- `type`: 类型
+  - `fact` - 事实（默认）
+  - `experience` - 经验
+  - `lesson` - 教训
+  - `preference` - 偏好
+  - `decision` - 决策
 
 ### memory_palace_search
 
-搜索记忆。
+**必填：**
+- `query`: 搜索关键词（可以是自然语言描述）
 
-**参数**:
-- `query` (必填): 搜索关键词
-- `tags` (可选): 标签过滤
-- `topK` (可选): 返回数量，默认 10
-
-**示例**:
-```json
-{
-  "query": "用户偏好",
-  "tags": ["偏好"],
-  "topK": 5
-}
-```
-
----
+**可选：**
+- `tags`: 只搜索特定标签
+- `topK`: 返回数量，默认 10
 
 ### memory_palace_record_experience
 
-记录一条可复用的经验。
+**必填：**
+- `content`: 经验内容
+- `applicability`: 这个经验在什么场景下有用
+- `source`: 来源标识（如任务 ID）
 
-**参数**:
-- `content` (必填): 经验内容
-- `category` (可选): 类别 development/operations/product/communication/general
-- `applicability` (必填): 适用场景描述
-- `source` (必填): 来源标识
+**可选：**
+- `category`: 类别
+  - `development` - 开发
+  - `operations` - 运维
+  - `product` - 产品
+  - `communication` - 沟通
+  - `general` - 一般
 
-**示例**:
-```json
-{
-  "content": "TypeScript 的 as const 可以让类型推断更精确",
-  "category": "development",
-  "applicability": "需要精确类型推断的场景",
-  "source": "task-123"
+---
+
+## 使用示例
+
+### 记住用户偏好
+```
+memory_palace_write: { 
+  "content": "用户偏好深色模式，喜欢简洁的回复风格",
+  "tags": ["偏好", "UI"],
+  "importance": 0.9,
+  "type": "preference"
 }
 ```
 
----
-
-### memory_palace_verify_experience
-
-验证经验是否有效。
-
-**参数**:
-- `id` (必填): 经验ID
-- `effective` (必填): 是否有效
-
-**说明**: 经验需要 2+ 次正面验证才标记为已验证。
-
----
-
-### memory_palace_parse_time
-
-解析时间表达式（规则引擎）。
-
-**参数**:
-- `expression` (必填): 时间表达式
-
-**支持**: "下周三"、"明天"、"上周五" 等时间表达
-
-**返回**: `{ hasTimeReasoning, keywords, resolvedDate, expression }`
-
----
-
-### memory_palace_summarize
-
-LLM 智能总结记忆。
-
-**参数**:
-- `id` (必填): 记忆ID
-- `save_summary` (可选): 是否保存到记忆，默认 true
-
-**返回**: `{ summary, keyPoints, importance, suggestedTags, category }`
-
----
-
-### memory_palace_extract_experience
-
-从记忆内容中提取可复用的经验和教训。
-
-**参数**:
-- `memory_ids` (可选): 记忆ID数组，默认处理所有记忆
-- `category` (可选): 筛选特定类别的记忆
-
-**返回**:
-```json
-{
-  "experiences": [
-    {
-      "content": "经验内容",
-      "category": "development",
-      "applicability": "适用场景",
-      "lessons": ["教训1", "教训2"],
-      "bestPractices": ["最佳实践1"],
-      "sourceMemoryId": "记忆ID"
-    }
-  ],
-  "count": 3
+### 记住项目状态
+```
+memory_palace_write: { 
+  "content": "MiroFish 项目已完成 MVP 开发，正在准备上线",
+  "location": "MiroFish",
+  "tags": ["项目", "状态"],
+  "importance": 0.8,
+  "type": "fact"
 }
 ```
 
----
-
-### memory_palace_expand_concepts
-
-使用 LLM 动态扩展搜索概念，提升搜索的语义理解能力。
-
-**参数**:
-- `query` (必填): 搜索词
-- `mode` (可选): "search" / "general"，默认 "search"
-
-**返回**:
-```json
-{
-  "originalQuery": "用户偏好",
-  "expandedKeywords": ["用户偏好", "设置", "配置", "选项"],
-  "relatedConcepts": ["UI设置", "主题配置", "个性化"],
-  "domains": ["preferences", "settings"]
-}
-```
-
----
-
-### memory_palace_compress
-
-智能压缩多条记忆，保留关键信息。
-
-**参数**:
-- `memory_ids` (必填): 记忆ID数组（至少2条）
-
-**返回**:
-```json
-{
-  "compressedMemories": [
-    {
-      "id": "记忆ID",
-      "compressedContent": "压缩后的内容摘要",
-      "preservedKeyInfo": ["关键信息1", "关键信息2"],
-      "compressionRatio": 0.45
-    }
-  ],
-  "totalOriginalChars": 5000,
-  "totalCompressedChars": 2250
-}
-```
-
----
-
-### memory_palace_experience_stats
-
-获取经验统计信息。
-
-**返回**: `{ total, verified, unverified, byCategory: {...}, recent }`
-
----
-
-## 使用场景
-
-### 1. 记住用户偏好
-```
-memory_palace_write: { content: "用户喜欢简洁的回复", tags: ["偏好"], importance: 0.8 }
-```
-
-### 2. 记录开发经验
+### 记录技术决策
 ```
 memory_palace_record_experience: { 
-  content: "OpenClaw 配置文件支持 JSON5 格式",
-  category: "development",
-  applicability: "读取 OpenClaw 配置时",
-  source: "memory-palace-dev"
+  "content": "TypeScript 的 as const 可以让类型推断更精确",
+  "category": "development",
+  "applicability": "需要精确类型推断的场景，如配置对象、常量定义",
+  "source": "MiroFish-dev"
 }
 ```
 
-### 3. 查找相关经验
+### 查找相关经验
 ```
-memory_palace_get_relevant_experiences: { context: "需要解析用户配置文件" }
+memory_palace_get_relevant_experiences: { 
+  "context": "需要为新项目选择数据库",
+  "limit": 3
+}
 ```
 
-### 4. 智能总结长记忆
+### 智能总结
 ```
-memory_palace_summarize: { id: "memory-id" }
+memory_palace_summarize: { 
+  "id": "memory-id",
+  "save_summary": true
+}
 ```
+
+---
+
+## 工作原理
+
+### 记忆写入流程
+1. Agent 调用 `write`
+2. 记忆存储到本地文件系统（Markdown 格式）
+3. 如果有向量模型，同时建立语义索引
+4. 返回记忆 ID，可用于后续检索
+
+### 记忆搜索流程
+1. Agent 调用 `search` 或 `recall`
+2. 如果有向量模型，进行语义相似度匹配
+3. 同时进行关键词匹配和过滤
+4. 结合 `importance` 和 `decayScore` 排序
+5. 返回最相关的记忆
+
+### 遗忘机制（艾宾浩斯遗忘曲线）
+
+记忆宫殿内置**艾宾浩斯遗忘曲线**机制，模拟人类记忆的自然衰减：
+
+**核心机制：**
+- 每条记忆有 `decayScore`（0-1），初始为 1.0
+- 每次访问记忆，`decayScore = min(1, decayScore × 0.9 + 0.2)`
+- `decayScore < 0.1` 时，记忆自动归档（可恢复）
+- 归档记忆仍可搜索到，但权重降低
+
+**环境变量配置：**
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `MEMORY_DECAY_ENABLED` | `true` | 启用衰减 |
+| `MEMORY_DECAY_ARCHIVE_THRESHOLD` | `0.1` | 归档阈值 |
+| `MEMORY_DECAY_RECOVERY_FACTOR` | `0.2` | 恢复因子 |
+
+**向后兼容：** 已有的记忆自动初始化 `decayScore = 1.0`
 
 ---
 
 ## 注意事项
 
-1. **向量模型安装**: 首次使用搜索功能前需安装 BGE-small-zh-v1.5 模型，未安装时自动降级到纯文本关键词匹配
-2. **经验验证**: 经验需要多次验证才能标记为有效，避免错误经验传播
-3. **重要性**: 建议给重要记忆设置较高的 importance 值（0.7+）
+1. **向量模型可选** — 未安装时自动降级到文本搜索，不影响基本功能
+2. **记忆是持久化的** — 写入后即使重启也保留
+3. **经验需要验证** — 记录的经验需要 2+ 次验证才标记为"已验证"
+4. **标签很重要** — 好的标签能大幅提升检索精度
+5. **重要性建议** — 真正重要的记忆设置 0.7+，便于后续优先检索
 
+---
+
+## 故障排除
+
+| 问题 | 解决方案 |
+|------|---------|
+| 搜索找不到 | 用 `expand_concepts` 扩展搜索词 |
+| 记忆太多 | 用 `compress` 压缩或 `extract_experience` 提炼 |
+| 不确定记忆是否正确 | 用 `verify_experience` 验证 |
+| 想不起某件事 | 用 `search` 配合关键词搜索 |
