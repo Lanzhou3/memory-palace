@@ -12,6 +12,8 @@ import type {
   GetExperiencesOptions,
   VerifyExperienceOptions,
   ExperienceCategory,
+  GetRelevantParams,
+  VerifiedExperienceResult,
 } from './types.js';
 import { MemoryPalaceManager } from './manager.js';
 import { ExperienceExtractor, defaultExtractor } from './llm/experience-extractor.js';
@@ -90,8 +92,9 @@ export class ExperienceManager {
 
     // Filter by category
     if (category) {
+      const categoryStr = String(category).toLowerCase();
       experiences = experiences.filter(m => 
-        m.experienceMeta?.category === category
+        String(m.experienceMeta?.category).toLowerCase() === categoryStr
       );
     }
 
@@ -134,7 +137,7 @@ export class ExperienceManager {
    * @param options Verification options
    * @returns Updated memory or null if not found
    */
-  async verifyExperience(options: VerifyExperienceOptions): Promise<Memory | null> {
+  async verifyExperience(options: VerifyExperienceOptions): Promise<VerifiedExperienceResult | null> {
     const { id, effective } = options;
 
     // Get the experience
@@ -170,7 +173,13 @@ export class ExperienceManager {
     // Save directly to storage
     await this.storage.save(updatedMemory);
 
-    return updatedMemory;
+    // Return with shortcut fields for convenience
+    return {
+      ...updatedMemory,
+      verified: updatedMemory.experienceMeta?.verified ?? false,
+      verifiedCount: updatedMemory.experienceMeta?.verifiedCount ?? 0,
+      verifiedAt: updatedMemory.experienceMeta?.lastVerifiedAt,
+    };
   }
 
   /**
@@ -246,15 +255,25 @@ export class ExperienceManager {
   /**
    * Get relevant experiences for a given context
    * 
-   * @param context Current context/task description
-   * @param limit Maximum results
+   * @param params - Object-style: { context, limit? } or legacy (context, limit)
    * @returns Relevant experiences sorted by relevance
+   * @deprecated Use getRelevantExperiences({ context, limit }) for object-style API
    */
-  async getRelevantExperiences(context: string, limit: number = 5): Promise<Memory[]> {
+  async getRelevantExperiences(
+    contextOrParams: string | GetRelevantParams,
+    limit?: number
+  ): Promise<Memory[]> {
+    // Handle backward compatibility - accept string or object
+    const context = typeof contextOrParams === 'string' ? contextOrParams : contextOrParams.context;
+    // For object style, use limit from object or fallback to parameter
+    const limitNum = typeof contextOrParams === 'string' 
+      ? (limit ?? 5) 
+      : (contextOrParams.limit ?? limit ?? 5);
+    
     // Search experiences matching the context
     const results = await this.manager.recall(context, {
       location: 'experiences',
-      topK: limit * 2,
+      topK: limitNum * 2,
     });
 
     // Filter to only experience type

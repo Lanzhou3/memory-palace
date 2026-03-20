@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0-beta.1] - 2026-03-20
+
+### Added
+- **统一 API 参数风格**: 所有方法支持 `{ param, options? }` 对象风格，同时保持向后兼容
+  - `get(id)` → `get({ id })` 
+  - `recall(query, options)` → `recall({ query, ...options })`
+  - `update(id, content, ...)` → `update({ id, content, ... })`
+  - `getRelevantExperiences(context, limit)` → `getRelevantExperiences({ context, limit })`
+- **verifyExperience 快捷字段**: 返回值增加 `verified`, `verifiedCount`, `verifiedAt` 快捷字段
+- **新增 VerifiedExperienceResult 类型**: 用于验证结果的类型定义
+- **新增 GetParams, RecallParams, GetRelevantParams 类型**: 统一对象风格的参数类型
+- **CLI 新增命令**:
+  - `get_relevant_experiences` - 获取相关经验
+  - `experience_stats` - 经验统计
+  - `summarize` - 智能总结记忆
+  - `parse_time` - 规则时间解析
+  - `get` 命令支持对象风格参数
+
+### Changed
+- SKILL.md 文档更新以反映新 API 风格
+- 简化 CLI 代码，使用更清晰的 API 调用方式
+
+### Fixed
+- API 类型定义与实际实现对齐
+
+---
+
+## [1.3.4] - 2026-03-20
+
+### Fixed
+- **CLI API 调用错误**: 修复 `MemoryPalaceManager` 构造函数调用方式，使用 `{ workspaceDir: path }` 格式
+- **CLI ExperienceManager**: 移除错误的 ExperienceManager 直接实例化，改用 manager 的方法
+- **参数映射**: 修复 `top_k` 到 `topK` 的参数映射问题
+- **经验分类筛选**: 修复严格相等 `===` 导致 category 筛选失效的问题，改用字符串宽松比较
+- **向量搜索降级**: SearchResult 增加 `isFallback` 字段，降级时输出 console.warn
+- **Stats 增强**: stats() 方法返回 `vectorSearch` 状态信息
+- **向量服务数据库错误处理**: 
+  - 添加 `--db-path` 参数支持自定义数据库路径
+  - 启动时检查数据库路径可写性
+  - 添加明确的权限错误提示
+- **SKILL.md 文档**: 更新示例代码与实际 API 对齐
+
+### Changed
+- CLI 工具使用 manager 暴露的方法替代直接操作 ExperienceManager
+
+---
+
 ## [1.2.1] - 2026-03-19
 
 ### Added

@@ -87,6 +87,18 @@ export interface Memory {
 }
 
 /**
+ * Verified experience result with shortcut fields
+ */
+export interface VerifiedExperienceResult extends Memory {
+  /** Shortcut: verified status */
+  verified: boolean;
+  /** Shortcut: verification count */
+  verifiedCount: number;
+  /** Shortcut: last verification timestamp */
+  verifiedAt?: Date;
+}
+
+/**
  * Parameters for storing a new memory
  */
 export interface StoreParams {
@@ -162,6 +174,33 @@ export interface RecallOptions {
 }
 
 /**
+ * Parameters for getting a memory (object-style)
+ */
+export interface GetParams {
+  id: string;
+}
+
+/**
+ * Parameters for recalling memories (object-style)
+ */
+export interface RecallParams {
+  query: string;
+  location?: string;
+  tags?: string[];
+  topK?: number;
+  minImportance?: number;
+  includeArchived?: boolean;
+}
+
+/**
+ * Parameters for getting relevant experiences (object-style)
+ */
+export interface GetRelevantParams {
+  context: string;
+  limit?: number;
+}
+
+/**
  * Search result
  */
 export interface SearchResult {
@@ -173,6 +212,9 @@ export interface SearchResult {
   
   /** Match highlights */
   highlights?: string[];
+  
+  /** Whether this result is from fallback (text) search */
+  isFallback?: boolean;
 }
 
 /**
@@ -228,6 +270,12 @@ export interface Stats {
   
   /** Storage path */
   storagePath: string;
+  
+  /** Vector search status */
+  vectorSearch?: {
+    enabled: boolean;
+    provider?: string;
+  };
 }
 
 /**

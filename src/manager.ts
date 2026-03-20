@@ -14,10 +14,12 @@ import type {
   StoreParams,
   UpdateParams,
   RecallOptions,
+  RecallParams,
   SearchResult,
   ListOptions,
   Stats,
   VectorSearchProvider,
+  GetParams,
 } from './types.js';
 import { TimeReasoningEngine, createTimeReasoning, type TimeContext } from './background/time-reasoning.js';
 import { ConceptExpander, createConceptExpander, type ConceptExpansion } from './background/concept-expansion.js';
@@ -121,8 +123,12 @@ export class MemoryPalaceManager {
   
   /**
    * Get a memory by ID
+   * @param params - Object-style: { id }
+   * @deprecated Use get({ id }) or get(id) for backward compatibility
    */
-  async get(id: string): Promise<Memory | null> {
+  async get(params: string | GetParams): Promise<Memory | null> {
+    // Handle backward compatibility - accept string or object
+    const id = typeof params === 'string' ? params : params.id;
     return this.storage.load(id);
   }
   
@@ -205,9 +211,18 @@ export class MemoryPalaceManager {
   
   /**
    * Search/recall memories with time reasoning and concept expansion
+   * @param params - Object-style: { query, options? } or legacy (query, options)
+   * @deprecated Use recall({ query, ...options }) or recall(query, options) for backward compatibility
    */
-  async recall(query: string, options: RecallOptions = {}): Promise<SearchResult[]> {
-    const topK = options.topK || 10;
+  async recall(
+    queryOrParams: string | RecallParams,
+    options: RecallOptions = {}
+  ): Promise<SearchResult[]> {
+    // Handle backward compatibility - accept string or object
+    const query = typeof queryOrParams === 'string' ? queryOrParams : queryOrParams.query;
+    const opts = typeof queryOrParams === 'string' ? options : { ...options, ...queryOrParams };
+    
+    const topK = opts.topK || 10;
     
     // Step 1: Parse time expressions in the query
     const timeContext = this.timeReasoning.parseTimeQuery(query);
@@ -234,13 +249,14 @@ export class MemoryPalaceManager {
     );
     
     // Step 4: Use vector search if available
+    let isFallback = false;
     if (this.vectorSearch) {
       const filter: Record<string, unknown> = {};
-      if (options.location) {
-        filter.location = options.location;
+      if (opts.location) {
+        filter.location = opts.location;
       }
-      if (options.tags && options.tags.length > 0) {
-        filter.tags = options.tags;
+      if (opts.tags && opts.tags.length > 0) {
+        filter.tags = opts.tags;
       }
       
       // Search with original query for semantic matching
@@ -250,7 +266,7 @@ export class MemoryPalaceManager {
       for (const result of results) {
         const memory = await this.storage.load(result.id);
         if (memory && memory.status === 'active') {
-          if (options.minImportance && memory.importance < options.minImportance) {
+          if (opts.minImportance && memory.importance < opts.minImportance) {
             continue;
           }
           
@@ -271,7 +287,8 @@ export class MemoryPalaceManager {
     }
     
     // Fallback to text search with enhanced keywords
-    return this.textSearch(query, { ...options, enhancedKeywords });
+    console.warn('[MemoryPalace] Vector search unavailable, falling back to text search. Consider installing vector dependencies for better search quality.');
+    return this.textSearch(query, { ...opts, enhancedKeywords, isFallback: true });
   }
   
   /**
@@ -329,7 +346,7 @@ export class MemoryPalaceManager {
    */
   private async textSearch(
     query: string, 
-    options: RecallOptions & { enhancedKeywords?: string[] } = {}
+    options: RecallOptions & { enhancedKeywords?: string[]; isFallback?: boolean } = {}
   ): Promise<SearchResult[]> {
     const topK = options.topK || 10;
     const queryLower = query.toLowerCase();
@@ -465,6 +482,7 @@ export class MemoryPalaceManager {
         memory,
         score,
         highlights: this.extractHighlights(memory.content, query),
+        isFallback: options.isFallback,
       };
     });
     
@@ -592,6 +610,10 @@ export class MemoryPalaceManager {
       byTag,
       avgImportance: ids.length > 0 ? totalImportance / ids.length : 0,
       storagePath: this.storagePath,
+      vectorSearch: {
+        enabled: !!this.vectorSearch,
+        provider: this.vectorSearch ? 'custom' : undefined,
+      },
     };
   }
   
