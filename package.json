@@ -1,6 +1,6 @@
 {
-  "name": "@openclaw/memory-palace",
-  "version": "1.4.0-beta.1",
+  "name": "memory-palace",
+  "version": "1.4.0",
   "description": "Memory Palace - Cognitive enhancement layer for OpenClaw agents with LLM-enhanced features",
   "type": "module",
   "main": "dist/src/index.js",

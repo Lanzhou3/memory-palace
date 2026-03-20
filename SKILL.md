@@ -1,7 +1,6 @@
 ---
-name: memory-palace
-description: Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, experience accumulation, and LLM-enhanced features
-version: 1.4.0-beta.1
+name: "memory-palace"
+description: "Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, experience accumulation, and LLM-enhanced features"
 allowed-tools: Bash(npx memory-palace:*)
 ---
 
@@ -55,17 +54,13 @@ bash scripts/install-vector-dependencies.sh
 | 工具 | 功能 | 必填参数 | 超时 |
 |------|------|----------|------|
 | `memory_palace_summarize` | 智能总结 | id | 60s |
-| `memory_palace_extract_experience` | 提取经验 | - | 60s |
-| `memory_palace_parse_time_llm` | 时间解析 | expression | 10s |
-| `memory_palace_expand_concepts_llm` | 概念扩展 | query | 15s |
-| `memory_palace_compress` | 智能压缩 | memory_ids | 60s |
+| `memory_palace_parse_time` | 时间表达式解析 | expression | 10s |
 
-### 辅助工具
+### 经验统计
 
 | 工具 | 功能 | 必填参数 |
 |------|------|----------|
-| `memory_palace_time_parse` | 规则时间解析 | query |
-| `memory_palace_concept_expand` | 规则概念扩展 | query |
+| `memory_palace_experience_stats` | 经验统计 | - |
 
 ---
 
@@ -148,27 +143,16 @@ bash scripts/install-vector-dependencies.sh
 
 ---
 
-### memory_palace_parse_time_llm
+### memory_palace_parse_time
 
-LLM 解析复杂时间表达式。
+解析时间表达式（规则引擎）。
 
 **参数**:
 - `expression` (必填): 时间表达式
 
-**支持**: "下周三之前的那天"、"三个月后的第一个周一" 等复杂表达
+**支持**: "下周三"、"明天"、"上周五" 等时间表达
 
-**返回**: `{ date: "YYYY-MM-DD", confidence: 0.9 }`
-
----
-
-### memory_palace_expand_concepts_llm
-
-LLM 动态扩展搜索概念。
-
-**参数**:
-- `query` (必填): 搜索词
-
-**返回**: `{ keywords: [...], domains: [...] }`
+**返回**: `{ hasTimeReasoning, keywords, resolvedDate, expression }`
 
 ---
 
@@ -181,6 +165,14 @@ LLM 智能总结记忆。
 - `save_summary` (可选): 是否保存到记忆，默认 true
 
 **返回**: `{ summary, keyPoints, importance, suggestedTags, category }`
+
+---
+
+### memory_palace_experience_stats
+
+获取经验统计信息。
+
+**返回**: `{ total, verified, unverified, byCategory: {...}, recent }`
 
 ---
 
@@ -215,7 +207,7 @@ memory_palace_summarize: { id: "memory-id" }
 
 ## 注意事项
 
-1. **LLM 工具超时**: 智能总结、经验提取等 LLM 工具有超时限制，失败会自动降级到规则引擎
+1. **向量模型安装**: 首次使用搜索功能前需安装 BGE-small-zh-v1.5 模型，未安装时自动降级到纯文本关键词匹配
 2. **经验验证**: 经验需要多次验证才能标记为有效，避免错误经验传播
 3. **重要性**: 建议给重要记忆设置较高的 importance 值（0.7+）
 
