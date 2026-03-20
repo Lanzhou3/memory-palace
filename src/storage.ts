@@ -118,6 +118,11 @@ function generateFrontmatter(memory: Memory): string {
     lines.push(`experienceMeta: ${JSON.stringify(memory.experienceMeta)}`);
   }
   
+  // Memory relations
+  if (memory.relations && memory.relations.length > 0) {
+    lines.push(`relations: ${JSON.stringify(memory.relations)}`);
+  }
+  
   // Ebbinghaus decay metrics
   if (memory.decay) {
     lines.push(`decay: ${JSON.stringify({
@@ -207,6 +212,7 @@ export function deserializeMemory(content: string, id: string): Memory {
     type: frontmatter.type as MemoryType | undefined,
     experienceMeta,
     decay,
+    relations: frontmatter.relations as Memory['relations'],
   };
 }
 

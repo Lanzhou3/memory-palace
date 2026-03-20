@@ -165,6 +165,25 @@ memory_palace_write: { "content": "决定使用 PostgreSQL 作为主数据库", 
   - `communication` - 沟通
   - `general` - 一般
 
+### 经验有效性 (effectivenessScore)
+
+经验按 `effectivenessScore`（0-1 分）排序，分数越高越靠前：
+
+| 操作 | 分数变化 | 说明 |
+|------|---------|------|
+| 记录新经验 | 初始 0.1 分 | 新经验不会被完全遗忘 |
+| 每次查询使用 | +0.1 分 | 被调用时自动累加 |
+| 每次验证有效 | +0.3 分 | 调用 `verify_experience(effective=true)` |
+| 每次验证无效 | -0.1 分 | 调用 `verify_experience(effective=false)` |
+
+**验证规则：** 需要 2+ 次验证才标记为"已验证"
+
+**示例：**
+```
+经验被查询3次、验证2次有效：
+effectivenessScore = min(1, 2*0.3 + 3*0.1) = min(1, 0.9) = 0.9
+```
+
 ### memory_palace_link
 
 将两条记忆关联起来。

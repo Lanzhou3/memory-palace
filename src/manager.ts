@@ -131,6 +131,7 @@ export class MemoryPalaceManager {
       updatedAt: now,
       type: params.type,
       experienceMeta: params.experienceMeta,
+      relations: params.relations || [],
     };
     
     await this.storage.save(memory);
@@ -287,7 +288,12 @@ export class MemoryPalaceManager {
   /**
    * Update a memory
    */
-  async update(params: UpdateParams): Promise<Memory | null> {
+  async update(idOrParams: string | UpdateParams, relations?: MemoryRelation[]): Promise<Memory | null> {
+    // Support both: update({ id, ... }) and update(id, { relations })
+    const params: UpdateParams = typeof idOrParams === 'string'
+      ? { id: idOrParams, relations }
+      : idOrParams;
+    
     const memory = await this.storage.load(params.id);
     if (!memory) {
       return null;
@@ -940,8 +946,16 @@ export class MemoryPalaceManager {
   
   /**
    * Verify an experience's effectiveness
+   * @param options - Object: { id, effective } or legacy: (id, effective)
    */
-  async verifyExperience(options: VerifyExperienceOptions): Promise<Memory | null> {
+  async verifyExperience(
+    idOrOptions: string | VerifyExperienceOptions, 
+    effective?: boolean
+  ): Promise<Memory | null> {
+    // Support both: verifyExperience({ id, effective }) and verifyExperience(id, effective)
+    const options: VerifyExperienceOptions = typeof idOrOptions === 'string'
+      ? { id: idOrOptions, effective: effective! }
+      : idOrOptions;
     return this.experienceManager.verifyExperience(options);
   }
   
