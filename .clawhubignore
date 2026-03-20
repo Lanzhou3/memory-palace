@@ -1,0 +1,36 @@
+# ClawHub ignore - files not needed for skill distribution
+
+## Always excluded (built-in)
+.git/
+node_modules/
+
+## Development artifacts
+.github/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+## Test files (not needed for skill execution)
+tests/
+*.test.js
+*.test.ts
+
+## Documentation (already have SKILL.md for reference)
+docs/
+references/
+examples/
+RELEASE_BETA.md
+INTEGRATION-REPORT.md
+OPENCLAW-INTEGRATION-PROPOSAL.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+
+## Build artifacts
+*.tsbuildinfo
+
+## Environment
+.env
+.env.local
+*.pem
+*.key
