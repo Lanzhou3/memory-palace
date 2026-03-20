@@ -1,6 +1,6 @@
 {
   "name": "memory-palace",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Memory Palace - Cognitive enhancement layer for OpenClaw agents with semantic search, time reasoning, knowledge graphs, and experience accumulation",
   "type": "module",
   "main": "dist/src/index.js",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test dist/tests/manager.test.js",
+    "test": "node --test dist/src/tests/manager.test.js",
     "test:integration": "node --test dist/tests/integration/openclaw-integration.test.js",
     "test:all": "node --test dist/tests/**/*.test.js",
     "lint": "eslint src/**/*.ts",
