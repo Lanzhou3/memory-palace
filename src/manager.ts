@@ -155,6 +155,9 @@ export class MemoryPalaceManager {
   /**
    * Get a memory by ID
    * @param params - Object-style: { id }
+   * @returns Memory if found, null if not found. Note: returns null for both
+   *          "ID does not exist" and "storage load error" cases. Use getOrThrow()
+   *          if you need to distinguish between these scenarios.
    * @deprecated Use get({ id }) or get(id) for backward compatibility
    */
   async get(params: string | GetParams): Promise<Memory | null> {
@@ -166,6 +169,22 @@ export class MemoryPalaceManager {
       await this.updateDecay(memory);
     }
     
+    return memory;
+  }
+  
+  /**
+   * Get a memory by ID, throws if not found or on error
+   * @param id - Memory ID
+   * @throws Error if memory does not exist or cannot be loaded
+   */
+  async getOrThrow(id: string): Promise<Memory> {
+    const memory = await this.storage.load(id);
+    if (!memory) {
+      throw new Error(`Memory not found: ${id}`);
+    }
+    if (this.decayEnabled) {
+      await this.updateDecay(memory);
+    }
     return memory;
   }
   
@@ -911,13 +930,31 @@ export class MemoryPalaceManager {
   
   /**
    * Store multiple memories at once
+   * Vector indexing is parallelized for better performance
    */
   async storeBatch(items: StoreParams[]): Promise<Memory[]> {
+    // First, create all memories (serial to avoid ID conflicts)
     const memories: Memory[] = [];
     for (const item of items) {
       const memory = await this.store(item);
       memories.push(memory);
     }
+    
+    // Then, index all in vector search in parallel
+    if (this.vectorSearch && memories.length > 0) {
+      await Promise.all(memories.map(memory => {
+        const textToIndex = memory.summary 
+          ? `${memory.content}\n\nSummary: ${memory.summary}`
+          : memory.content;
+        return this.vectorSearch!.index(memory.id, textToIndex, {
+          tags: memory.tags,
+          location: memory.location,
+          importance: memory.importance,
+          type: memory.type,
+        });
+      }));
+    }
+    
     return memories;
   }
   
@@ -926,6 +963,34 @@ export class MemoryPalaceManager {
    */
   async getBatch(ids: string[]): Promise<(Memory | null)[]> {
     return Promise.all(ids.map(id => this.get(id)));
+  }
+  
+  /**
+   * Delete multiple memories by IDs
+   * @param ids - Array of memory IDs to delete
+   * @param permanent - If true, permanently delete; otherwise soft delete
+   * @returns Object with deleted IDs and failed deletions
+   */
+  async deleteBatch(
+    ids: string[], 
+    permanent: boolean = false
+  ): Promise<{ 
+    deleted: string[]; 
+    failed: { id: string; error: string }[] 
+  }> {
+    const results = await Promise.allSettled(ids.map(id => this.delete(id, permanent)));
+    const deleted: string[] = [];
+    const failed: { id: string; error: string }[] = [];
+    
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        deleted.push(ids[i]);
+      } else {
+        failed.push({ id: ids[i], error: result.reason?.message || String(result.reason) });
+      }
+    });
+    
+    return { deleted, failed };
   }
   
   // ==================== Experience Operations ====================

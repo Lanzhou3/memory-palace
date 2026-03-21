@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { MemoryPalaceManager } from '../dist/src/manager.js';
 import { createTimeReasoning } from '../dist/src/background/time-reasoning.js';
 import { defaultSummarizer } from '../dist/src/llm/summarizer.js';
@@ -48,32 +49,13 @@ const action = process.argv[2];
  * Parse CLI arguments - supports both JSON and key=value formats
  * Examples:
  *   JSON: '{"id":"xxx","content":"test"}'
- *   key=value: id=xxx content="value with spaces" tags='["array"]'
+ *   key=value: id=xxx content=test
  */
-function parseArgs(raw) {
+function parseArgs(raw: string): Record<string, unknown> {
   if (!raw) return {};
   if (raw.includes('=')) {
-    // 支持 key="value with spaces" 或 key='value with spaces'
-    const regex = /(\w+)=(?:"([^"]*)"|'([^']*)'|(\S+))/g;
-    const result = {};
-    let match;
-    while ((match = regex.exec(raw)) !== null) {
-      const key = match[1];
-      let value = match[2] || match[3] || match[4]; // 优先取引号包裹的值
-      // 尝试解析 JSON 格式的 value（如数组、对象）
-      if (typeof value === 'string') {
-        try {
-          const parsed = JSON.parse(value);
-          if (typeof parsed === 'object' && parsed !== null) {
-            value = parsed;
-          }
-        } catch {
-          // 保持字符串
-        }
-      }
-      result[key] = value;
-    }
-    if (Object.keys(result).length > 0) return result;
+    // key=value 格式解析
+    return Object.fromEntries(raw.split(' ').map(pair => pair.split('=')));
   }
   // 回退 JSON 解析
   try {
@@ -83,7 +65,7 @@ function parseArgs(raw) {
   }
 }
 
-const args = parseArgs(process.argv.slice(3).join(' ') || '{}');
+const args = parseArgs(process.argv[3] || '{}');
 
 async function main() {
   let result;

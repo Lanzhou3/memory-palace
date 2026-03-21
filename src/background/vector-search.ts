@@ -8,6 +8,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as http from 'http';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import type { VectorSearchProvider, VectorSearchResult } from '../types.js';
 
 /**

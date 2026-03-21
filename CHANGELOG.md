@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-21
+
+### Added
+- **P1-1: CLI 参数解析增强**: CLI 现在支持 key=value 格式的参数（如 `id=xxx content=test`），同时保持 JSON 格式兼容
+- **P1-2: 批量删除 deleteBatch**: 新增 `deleteBatch(ids, permanent)` 方法，支持批量删除记忆，返回删除结果和失败详情
+- **P1-3: storeBatch 原子性优化**: `storeBatch` 向量索引改为 `Promise.all` 并行执行，提升批量写入性能
+
+### Changed
+- `storeBatch` 保持串行创建记忆（避免 ID 冲突），向量索引阶段并行执行
+
+---
+
+## [1.6.1] - 2026-03-21
+
+### Fixed
+- **P0: ES Module __dirname 兼容性**: `LocalVectorSearchProvider` 构造函数中使用 `__dirname` 在 ES Module 环境下不存在，改为使用 `fileURLToPath(import.meta.url)` 兼容
+- **P0: get() 返回值语义优化**: 新增 `getOrThrow()` 方法，区分「ID不存在」与「系统错误」两种场景，原有 `get()` 方法保持向后兼容
+
+---
+
 ## [1.4.1] - 2026-03-20
 
 ### Changed

@@ -166,6 +166,9 @@ export interface StoreParams {
   
   /** Experience metadata (only for type='experience') */
   experienceMeta?: ExperienceMeta;
+
+  /** Relations to other memories */
+  relations?: MemoryRelation[];
 }
 
 /**
